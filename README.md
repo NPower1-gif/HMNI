@@ -1,6 +1,6 @@
 # H(n)MI Class - MDEF
 
-Group Members: [Nathan Power](https://github.com/npower1-gif), [Aayushi Vasnik]((https://github.com/vaschick)), [Alfred Aramouni]((https://github.com/khara7mar))
+Group Members: [Nathan Power](https://github.com/npower1-gif), [Aayushi Vasnik](https://github.com/vaschick)), [Alfred Aramouni](https://github.com/khara7mar))
 
 The following repository shows the work of Group 5 during the H(n)MI Class. The Group consists of two MAA Students and a MAEBB Student. 
 
