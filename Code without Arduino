@@ -1,0 +1,114 @@
+let handPose;
+let video;
+let hands = [];
+let colorFilter = null;
+let peace, rock, surf, thumbs, palm;
+let lastGesture = null; // Track the last detected gesture
+
+function preload() {
+  handPose = ml5.handPose();
+}
+
+function setup() {
+  createCanvas(640, 480);
+  frameRate(30);
+
+  video = createCapture(VIDEO);
+  video.size(640, 480);
+  video.hide();
+
+  peace = loadSound("peace.mp3");
+  rock = loadSound("rock.mp3");
+  thumbs = loadSound("thumbs.mp3");
+  palm = loadSound("palm.mp3");
+  surf = loadSound("surf.mp3");
+
+  handPose.detectStart(video, gotHands, { flipHorizontal: true, maxContinuousFrames: 10 });
+}
+
+function draw() {
+  if (colorFilter) {
+    tint(colorFilter.r, colorFilter.g, colorFilter.b);
+  } else {
+    noTint();
+  }
+  image(video, 0, 0, width, height);
+
+  for (let i = 0; i < hands.length; i++) {
+    let hand = hands[i];
+    for (let j = 0; j < hand.keypoints.length; j++) {
+      let keypoint = hand.keypoints[j];
+      fill(0, 255, 0);
+      noStroke();
+      circle(keypoint.x, keypoint.y, 10);
+    }
+    checkGesture(hand);
+  }
+}
+
+function gotHands(results) {
+  hands = results;
+}
+
+function checkGesture(hand) {
+  const fingers = [
+    { tip: 8, base: 5 },
+    { tip: 12, base: 9 },
+    { tip: 16, base: 13 },
+    { tip: 20, base: 17 },
+  ];
+
+  let fingersUp = fingers.map(finger => isFingerUp(hand, finger.tip, finger.base));
+  const thumbUp = isThumbUp(hand);
+
+  function stopAllSounds() {
+    peace.stop();
+    rock.stop();
+    thumbs.stop();
+    surf.stop();
+    palm.stop();
+  }
+
+  let newGesture = null;
+
+  if (fingersUp[0] && !fingersUp[1] && !fingersUp[2] && fingersUp[3]) {
+    newGesture = "rock";
+    colorFilter = { r: 255, g: 0, b: 0 };
+  } else if (fingersUp[0] && fingersUp[1] && !fingersUp[2] && !fingersUp[3]) {
+    newGesture = "peace";
+    colorFilter = { r: 0, g: 255, b: 0 };
+  } else if (thumbUp && !fingersUp.includes(true)) {
+    newGesture = "thumbs";
+    colorFilter = { r: 0, g: 0, b: 255 };
+  } else if (!fingersUp[0] && !fingersUp[1] && !fingersUp[2] && fingersUp[3] && thumbUp) {
+    newGesture = "surf";
+    colorFilter = { r: 0, g: 150, b: 255 };
+  } else if (fingersUp.every(state => state) && thumbUp) {
+    newGesture = "palm";
+    colorFilter = { r: 150, g: 150, b: 255 };
+  } else {
+    colorFilter = null;
+  }
+
+  // Only play/stop sounds if the detected gesture has changed
+  if (newGesture !== lastGesture) {
+    stopAllSounds(); // Stop previous sound
+    if (newGesture === "rock") rock.play();
+    if (newGesture === "peace") peace.play();
+    if (newGesture === "thumbs") thumbs.play();
+    if (newGesture === "surf") surf.play();
+    if (newGesture === "palm") palm.play();
+    
+    lastGesture = newGesture;
+  }
+}
+
+function isFingerUp(hand, tipIndex, baseIndex) {
+  return hand.keypoints[tipIndex].y < hand.keypoints[baseIndex].y;
+}
+
+function isThumbUp(hand) {
+  const tip = hand.keypoints[4];
+  const base = hand.keypoints[2];
+  return tip.y < base.y && Math.abs(tip.x - base.x) > 30;
+}
